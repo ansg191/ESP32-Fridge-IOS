@@ -17,15 +17,21 @@ struct ContentView: View {
                     .imageScale(.large)
                     .foregroundStyle(.tint)
                 Text("Hello, world!")
-                Button(action: { bluetoothApi.toggleBluetooth() }, label: {
-                    Text(bluetoothApi.isBluetoothEnabled ? "Turn Off Bluetooth" : "Turn On Bluetooth")
-                        .padding()
-                })
+                if bluetoothApi.isBluetoothAllowed {
+                    Button(action: { bluetoothApi.toggleBluetooth() }, label: {
+                        Text(bluetoothApi.isBluetoothEnabled ? "Turn Off Bluetooth" : "Turn On Bluetooth")
+                            .padding()
+                    })
 
-                List(bluetoothApi.discoveredDevices, id: \.identifier) { device in
-                    NavigationLink(destination: InfoView<ESP32Device>(device: device)) {
-                        Text(device.name ?? "Unknown")
+                    List(bluetoothApi.discoveredDevices, id: \.identifier) { device in
+                        NavigationLink(destination: InfoView<ESP32Device>(device: device)) {
+                            Text(device.name ?? "Unknown")
+                        }
                     }
+                } else {
+                    Text("Bluetooth permission was denied for this application")
+                        .bold()
+                        .font(.title)
                 }
             }
             .padding()

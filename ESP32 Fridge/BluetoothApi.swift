@@ -10,6 +10,7 @@ import Foundation
 
 class BluetoothApi: NSObject, CBCentralManagerDelegate, ObservableObject {
     @Published var isBluetoothEnabled = false
+    @Published var isBluetoothAllowed = false
     @Published var discoveredDevices = [ESP32Device]()
     private var discoveredPeripherals = [CBPeripheral]()
 
@@ -21,13 +22,13 @@ class BluetoothApi: NSObject, CBCentralManagerDelegate, ObservableObject {
     }
 
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        if central.state == .poweredOn {
-            isBluetoothEnabled = true
-            central.scanForPeripherals(withServices: ESP32Device.requiredServices, options: nil)
-            // centralManager.scanForPeripherals(withServices: nil, options: nil)
-        } else {
-            isBluetoothEnabled = false
-        }
+        isBluetoothAllowed = CBCentralManager.authorization == .allowedAlways
+        isBluetoothEnabled = central.state == .poweredOn
+
+        guard isBluetoothAllowed && isBluetoothEnabled else { return }
+
+        central.scanForPeripherals(withServices: ESP32Device.requiredServices, options: nil)
+        // centralManager.scanForPeripherals(withServices: nil, options: nil)
     }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData _: [String: Any], rssi _: NSNumber) {
