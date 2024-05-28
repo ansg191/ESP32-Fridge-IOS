@@ -27,6 +27,8 @@ protocol FridgeDevice: ObservableObject {
     var name: String? { get }
     /// Device UUID
     var identifier: UUID { get }
+    /// Whether device is fully connected
+    var connected: Bool { get }
     
     /// Start request to retrieve some `FridgeDeviceAttributes`
     func retrieve(for: FridgeDeviceAttributes)
@@ -67,6 +69,7 @@ class MockFridgeDevice: NSObject, ObservableObject, FridgeDevice {
     
     var name: String? = "MockFridgeDevice"
     var identifier: UUID = UUID()
+    @Published var connected: Bool = true
     
     func retrieve(for attrs: FridgeDeviceAttributes) {
         if attrs.contains(.version) {

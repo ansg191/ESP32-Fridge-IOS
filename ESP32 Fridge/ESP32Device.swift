@@ -26,15 +26,33 @@ class ESP32Device: NSObject, CBPeripheralDelegate, ObservableObject, FridgeDevic
         get { peripheral.identifier }
     }
     
+    @Published var connected = false
+
     private var peripheral: CBPeripheral
     
+    static let requiredServices = [
+        ESP32DeviceConstants.deviceInfoService,
+        ESP32DeviceConstants.tempService,
+        ESP32DeviceConstants.timeService
+    ]
+
+    override var description: String {
+        get {
+            return "ESP32Device: \(peripheral)"
+        }
+    }
+
     init(peripheral: CBPeripheral) {
         self.peripheral = peripheral
         super.init()
         self.peripheral.delegate = self
+        self.connected = self.peripheral.state == .connected
     }
     
     func retrieve(for attrs: FridgeDeviceAttributes) {
+        self.connected = self.peripheral.state == .connected
+        guard self.connected else { return }
+
         if attrs.contains(.version) {
             self.read(suuid: ESP32DeviceConstants.deviceInfoService, cuuid: ESP32DeviceConstants.versionChar)
         }
@@ -155,7 +173,7 @@ class ESP32Device: NSObject, CBPeripheralDelegate, ObservableObject, FridgeDevic
 
 struct ESP32DeviceConstants {
     static let deviceInfoService = CBUUID(string: "0x180A")
-    static let versionChar = CBUUID(string: "2A28")
+    static let versionChar = CBUUID(string: "0x2A28")
     
     static let timeService = CBUUID(string: "0x1847")
     static let getTimeChar = CBUUID(string: "0x2A2B")

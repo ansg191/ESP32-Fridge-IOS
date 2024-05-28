@@ -30,11 +30,19 @@ struct InfoView<Device>: View where Device: FridgeDevice {
         let timer = Timer.publish(every: 1, tolerance: 0.5, on: .main, in: .common).autoconnect()
         
         VStack {
-            if device.receivedAttribs.count != FridgeDeviceAttributes.totalAttribs {
+            if !device.connected {
+                ProgressView()
+                    .onReceive(timer, perform: { _ in
+                        device.retrieve(for: .all)
+                    })
+            } else if device.receivedAttribs.count != FridgeDeviceAttributes.totalAttribs {
                 ProgressView(value: Float(device.receivedAttribs.count), total: Float(FridgeDeviceAttributes.totalAttribs)) {
                     Text("Recieved Characteristics: \(device.receivedAttribs.count) of \(FridgeDeviceAttributes.totalAttribs)")
                 }
                 .padding()
+                .onReceive(timer, perform: { _ in
+                    device.retrieve(for: .all)
+                })
             } else {
                 VStack(spacing: 16) {
                     Text(device.name ?? "Unknown")

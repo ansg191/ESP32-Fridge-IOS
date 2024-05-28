@@ -11,6 +11,7 @@ import Foundation
 class BluetoothApi : NSObject, CBCentralManagerDelegate, ObservableObject {
     @Published var isBluetoothEnabled = false
     @Published var discoveredDevices = [ESP32Device]()
+    private var discoveredPeripherals = [CBPeripheral]()
     
     private var centralManager: CBCentralManager!
     
@@ -22,32 +23,36 @@ class BluetoothApi : NSObject, CBCentralManagerDelegate, ObservableObject {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         if central.state == .poweredOn {
             isBluetoothEnabled = true
-            centralManager.scanForPeripherals(withServices: nil, options: nil)
+            centralManager.scanForPeripherals(withServices: ESP32Device.requiredServices, options: nil)
+            //centralManager.scanForPeripherals(withServices: nil, options: nil)
         } else {
             isBluetoothEnabled = false
         }
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        // Check UUID is our device
-//        let uuid = UUID(uuidString: "D84C335E-02D6-51F3-8AE4-E94A749B5921")
-        let uuid = UUID(uuidString: "1FF62685-8E4A-1751-4A14-DE683D1E602E")
-        if (peripheral.identifier != uuid) {
+        // Ensure device has a name
+        guard peripheral.name != nil else { return }
+
+        // Handle duplicate peripherals
+        // This prevents a ESP32Device from being assigned a delegate, then being destroyed
+        if discoveredPeripherals.contains(peripheral) {
             return
         }
         
         // Construct device
+        // This sets the delegate of the peripheral to the newly created ESP32Device
         let device = ESP32Device(peripheral: peripheral)
         print(device)
         
         // Add device to list & connect
-        if !discoveredDevices.contains(device) {
-            discoveredDevices.append(device)
-            device.connect(manager: self.centralManager)
-        }
+        discoveredDevices.append(device)
+        discoveredPeripherals.append(peripheral)
+        device.connect(manager: self.centralManager)
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        print("Connected to \(peripheral)")
         peripheral.discoverServices(nil)
     }
     
@@ -60,6 +65,7 @@ class BluetoothApi : NSObject, CBCentralManagerDelegate, ObservableObject {
             }
             
             discoveredDevices = []
+            discoveredPeripherals = []
             isBluetoothEnabled = false
             centralManager = nil
         } else {
