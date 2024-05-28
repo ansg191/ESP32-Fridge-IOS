@@ -13,7 +13,7 @@ class BluetoothApi: NSObject, CBCentralManagerDelegate, ObservableObject {
     @Published var discoveredDevices = [ESP32Device]()
     private var discoveredPeripherals = [CBPeripheral]()
 
-    private var centralManager: CBCentralManager!
+    private var centralManager: CBCentralManager?
 
     override init() {
         super.init()
@@ -23,14 +23,14 @@ class BluetoothApi: NSObject, CBCentralManagerDelegate, ObservableObject {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         if central.state == .poweredOn {
             isBluetoothEnabled = true
-            centralManager.scanForPeripherals(withServices: ESP32Device.requiredServices, options: nil)
+            central.scanForPeripherals(withServices: ESP32Device.requiredServices, options: nil)
             // centralManager.scanForPeripherals(withServices: nil, options: nil)
         } else {
             isBluetoothEnabled = false
         }
     }
 
-    func centralManager(_: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData _: [String: Any], rssi _: NSNumber) {
+    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData _: [String: Any], rssi _: NSNumber) {
         // Ensure device has a name
         guard peripheral.name != nil else { return }
 
@@ -48,7 +48,7 @@ class BluetoothApi: NSObject, CBCentralManagerDelegate, ObservableObject {
         // Add device to list & connect
         discoveredDevices.append(device)
         discoveredPeripherals.append(peripheral)
-        device.connect(manager: centralManager)
+        device.connect(manager: central)
     }
 
     func centralManager(_: CBCentralManager, didConnect peripheral: CBPeripheral) {
@@ -57,7 +57,7 @@ class BluetoothApi: NSObject, CBCentralManagerDelegate, ObservableObject {
     }
 
     func toggleBluetooth() {
-        if centralManager?.state == .poweredOn {
+        if let centralManager = centralManager, centralManager.state == .poweredOn {
             centralManager.stopScan()
 
             for device in discoveredDevices {
@@ -67,7 +67,7 @@ class BluetoothApi: NSObject, CBCentralManagerDelegate, ObservableObject {
             discoveredDevices = []
             discoveredPeripherals = []
             isBluetoothEnabled = false
-            centralManager = nil
+            self.centralManager = nil
         } else {
             centralManager = CBCentralManager(delegate: self, queue: nil)
         }
