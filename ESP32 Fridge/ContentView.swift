@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject var bluetoothApi = BluetoothApi()
-    
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -17,17 +17,16 @@ struct ContentView: View {
                     .imageScale(.large)
                     .foregroundStyle(.tint)
                 Text("Hello, world!")
-                Button(action: {bluetoothApi.toggleBluetooth()}, label: {
+                Button(action: { bluetoothApi.toggleBluetooth() }, label: {
                     Text(bluetoothApi.isBluetoothEnabled ? "Turn Off Bluetooth" : "Turn On Bluetooth")
                         .padding()
                 })
-                
+
                 List(bluetoothApi.discoveredDevices, id: \.identifier) { device in
                     NavigationLink(destination: InfoView<ESP32Device>(device: device)) {
                         Text(device.name ?? "Unknown")
                     }
                 }
-                
             }
             .padding()
         }
